@@ -4,10 +4,13 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
+
+
 userGroupRouter.post("/createUserGroup", async (req, res) => {
   const { userId, groupId } = req.body;
-  if (!userId || !groupId)
+  if (!userId || !groupId){
     throw new Error("Cannot create usergroup midding Ids");
+  }
 
   try {
     console.log("g")

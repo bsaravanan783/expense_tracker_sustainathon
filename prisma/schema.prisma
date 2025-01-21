@@ -34,6 +34,7 @@ model Users {
   Saving      Saving[]
   Bill        Bill[]
   Budget      Budget[]
+  BillSplit   BillSplit[]
 }
 
 model Groups {
@@ -45,6 +46,7 @@ model Groups {
   updatedAt  DateTime @updatedAt
 
   UsersGroups UsersGroups[]
+  Bill        Bill[]
 }
 
 model UsersGroups {
@@ -62,7 +64,7 @@ model UsersGroups {
 
 model Category {
   id            String     @id @default(uuid())
-  userId        String     // Foreign key to Users
+  userId        String // Foreign key to Users
   users         Users      @relation(fields: [userId], references: [id])
   category_name String
   createdAt     DateTime   @default(now())
@@ -72,7 +74,7 @@ model Category {
 
 model Expenses {
   id          String   @id @default(uuid())
-  userId      String   // Foreign key to Users
+  userId      String // Foreign key to Users
   users       Users    @relation(fields: [userId], references: [id])
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id])
@@ -84,7 +86,7 @@ model Expenses {
 
 model Saving {
   id          String   @id @default(uuid())
-  userId      String   // Foreign key to Users
+  userId      String // Foreign key to Users
   users       Users    @relation(fields: [userId], references: [id])
   amount      Int
   description String
@@ -92,27 +94,53 @@ model Saving {
   updatedAt   DateTime @updatedAt
 }
 
+// model Bill {
+//   id         String   @id @default(uuid())
+//   userId     String   // Foreign key to Users
+//   users      Users    @relation(fields: [userId], references: [id])
+//   bill_name  String
+//   amount     Int
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+// }
+
+// model BillSplit {
+//   id         String   @id @default(uuid())
+//   split_name String
+//   amount     Int
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+// }
+
 model Bill {
-  id         String   @id @default(uuid())
-  userId     String   // Foreign key to Users
-  users      Users    @relation(fields: [userId], references: [id])
-  bill_name  String
-  amount     Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  userId      String // Foreign key to Users
+  users       Users    @relation(fields: [userId], references: [id])
+  groupId     String? // Foreign key to Groups (optional, for group bills)
+  groups      Groups?  @relation(fields: [groupId], references: [id])
+  bill_name   String
+  totalAmount Int // Total amount for the bill
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  billSplits BillSplit[] // Relation to BillSplit
 }
 
 model BillSplit {
-  id         String   @id @default(uuid())
-  split_name String
-  amount     Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(uuid())
+  billId      String // Foreign key to Bill
+  bills       Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  userId      String // Foreign key to Users
+  users       Users    @relation(fields: [userId], references: [id])
+  splitAmount Int // Amount assigned to this user
+  status      String // Example: "paid", "pending"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Budget {
   id          String     @id @default(uuid())
-  userId      String     // Foreign key to Users
+  userId      String // Foreign key to Users
   users       Users      @relation(fields: [userId], references: [id])
   amount      Int
   type        BudgetType // Enum field for short-term and long-term budget
