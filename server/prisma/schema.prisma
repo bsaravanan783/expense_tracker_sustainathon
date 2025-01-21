@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BudgetType {
+  SHORT_TERM
+  LONG_TERM
+}
+
+model Users {
+  id        String   @id @default(uuid())
+  name      String
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Groups      Groups[]
+  UsersGroups UsersGroups[]
+  Category    Category[]
+  Expenses    Expenses[]
+  Saving      Saving[]
+  Bill        Bill[]
+  Budget      Budget[]
+}
+
+model Groups {
+  id         String   @id @default(uuid())
+  group_name String   @unique
+  userId     String
+  created_by Users    @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  UsersGroups UsersGroups[]
+}
+
+model UsersGroups {
+  id      String @id @default(uuid())
+  userId  String // Foreign key to Users
+  groupId String // Foreign key to Groups
+
+  users     Users    @relation(fields: [userId], references: [id])
+  groups    Groups   @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, groupId]) // Ensure no duplicate user-group combinations
+}
+
+model Category {
+  id            String     @id @default(uuid())
+  userId        String     // Foreign key to Users
+  users         Users      @relation(fields: [userId], references: [id])
+  category_name String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  Expenses      Expenses[]
+}
+
+model Expenses {
+  id          String   @id @default(uuid())
+  userId      String   // Foreign key to Users
+  users       Users    @relation(fields: [userId], references: [id])
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  amount      Int
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Saving {
+  id          String   @id @default(uuid())
+  userId      String   // Foreign key to Users
+  users       Users    @relation(fields: [userId], references: [id])
+  amount      Int
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Bill {
+  id         String   @id @default(uuid())
+  userId     String   // Foreign key to Users
+  users      Users    @relation(fields: [userId], references: [id])
+  bill_name  String
+  amount     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model BillSplit {
+  id         String   @id @default(uuid())
+  split_name String
+  amount     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Budget {
+  id          String     @id @default(uuid())
+  userId      String     // Foreign key to Users
+  users       Users      @relation(fields: [userId], references: [id])
+  amount      Int
+  type        BudgetType // Enum field for short-term and long-term budget
+  description String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}

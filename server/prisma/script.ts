@@ -1,0 +1,27 @@
+import { PrismaClient } from '@prisma/client'
+import { log } from 'console'
+
+const prisma = new PrismaClient()
+
+
+async function main(){
+    const user = await prisma.users.create({
+        data: {
+          name: "Kanishka", // Add the missing "name" field
+          username: "kanishka",
+          email: "aaa@gmail.com",
+          password: "heeloo@123",
+        },
+      });
+      console.log(user);
+      
+
+}
+main()
+  .catch(e=>{
+    console.error(e.message)
+
+  })
+  .finally(async()=>{
+    await prisma.$disconnect()
+  })
