@@ -1,9 +1,9 @@
 const express = require("express");
-const billSplitRouter = express.Router();
+const billRouter = express.Router();
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-billSplitRouter.post("/createBill", async (req, res) => {
+billRouter.post("/createBill", async (req, res) => {
   try {
     const userId = "1";
     const { billName, totalAmount, users } = req.body;
@@ -18,13 +18,13 @@ billSplitRouter.post("/createBill", async (req, res) => {
       data: {
         userId: userId,
         bill_name: billName,
-        billSplits: {
-          create: users.map((user) => ({
-            userId: userId,
-            splitAmount: splitAmountForIndividual,
-            status: defaultStatus,
-          })),
-        },
+        create: users.map((user) => ({
+          user: { connect: { id: user.userId } }, 
+          splitAmount: splitAmountForIndividual,
+          status: defaultStatus,
+        })),
+
+
       },
     });
 
@@ -34,7 +34,7 @@ billSplitRouter.post("/createBill", async (req, res) => {
   }
 });
 
-billSplitRouter.delete("/deleteBill", async (req, res) => {
+billRouter.delete("/deleteBill", async (req, res) => {
   try {
     const billId = req.params.id;
     if (!billId) throw new Error("cannot delete bill");
@@ -50,5 +50,4 @@ billSplitRouter.delete("/deleteBill", async (req, res) => {
   }
 });
 
-
-module.exports= billSplitRouter;
+module.exports = billRouter;
