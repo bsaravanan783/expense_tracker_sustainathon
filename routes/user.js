@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const { PrismaClient } = require("@prisma/client");
+const { connect } = require("http2");
 
 const prisma = new PrismaClient();
 
@@ -70,4 +71,93 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
+userRouter.post("/savings",async(req,res)=>{
+  try {
+    const {username,amount,description} = req.body;
+    console.log(username,amount,description);
+    
+
+    if(!username || !amount || !description){
+      return res.status(400).json({error:"username, amount, and type are required"});
+    }
+    const createSavings= await prisma.saving.create({
+        data:{
+            amount:parseInt(amount),
+          
+            description,
+            users:{
+            connect:{
+                username,
+            },
+            },
+        },
+        });
+        console.log(createSavings);
+        
+  
+  } catch (err) {
+    console.error("Error stack trace:", err.stack);
+    res.status(500).json({ error: err.message });
+  }
+
+
+
+
+})
+
+
+
+userRouter.put("/savings_update/:id",async(req,res)=>{
+  try{
+  console.log("verified and move to put ");
+  const {id}=req.params
+  const savingsId = req.params.id;
+  console.log(typeof(req.params.id));
+  const {description,username,amount}=req.body
+  const savings= await prisma.saving.findUnique({
+    where: {
+      id: savingsId,
+      users: {
+        connect: {
+          username:username,
+        },
+       
+      },
+
+    },
+
+
+  })
+  console.log(todo,"line no 207");
+    
+  if(!todo){
+    throw new Error("Todo not found or not authorized to update");
+  }
+  const updatedSavings = await prisma.saving.update({
+    where: { id: savingsId },
+    data: { description,amount },
+  }); 
+  
+  console.log(updatedSavings,"updated todo ");
+  
+
+  res.json(updatedTodo);
+}
+catch (err) {
+  res.status(500).json({ error: err.message });
+
+}
+
+
+})
+
+
+
+
+
+
+
 module.exports = userRouter;
+
+
+
