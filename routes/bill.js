@@ -14,15 +14,20 @@ billRouter.post("/createBill", async (req, res) => {
       throw new Error("Missing fields in Bill !");
     }
 
+    
+
     const bill = await prisma.bill.create({
       data: {
         userId: userId,
         bill_name: billName,
-        create: users.map((user) => ({
-          user: { connect: { id: user.userId } }, 
-          splitAmount: splitAmountForIndividual,
-          status: defaultStatus,
-        })),
+        totalAmount : totalAmount,
+        billSplits: {
+          create: usersList.map((user) => ({
+            userId: user.userId,
+            splitAmount: parseFloat(splitAmount),
+            status: "pending",
+          })),
+        },
 
 
       },

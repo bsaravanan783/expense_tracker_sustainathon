@@ -31,7 +31,6 @@ model Users {
   Budget      Budget[]
   BillSplit   BillSplit[]
 }
-
 model Groups {
   id         String   @id @default(uuid())
   group_name String   @unique
