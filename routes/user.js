@@ -3,8 +3,9 @@ const userRouter = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-
+const validator = require("validator");
 const { PrismaClient } = require("@prisma/client");
+const { rootCertificates } = require("tls");
 
 const prisma = new PrismaClient();
 
@@ -43,7 +44,9 @@ userRouter.post("/signup", async (req, res) => {
   try {
     const { username, email, password, name } = req.body;
 
-    // Log request data
+    if(!validator.isEmail(email)){
+      throw new Error("")
+    }
     console.log("Request Data:", username, email);
 
     // Hash the password
