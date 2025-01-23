@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BudgetType {
+  SHORT_TERM
+  LONG_TERM
+}
+
+enum StatusType {
+  PAID
+  PENDING
+  REJECTED
+}
+
+model Users {
+  id        Int      @id @default(autoincrement())
+  name      String
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Groups      Groups[]
+  UsersGroups UsersGroups[]
+  Category    Category[]
+  Expenses    Expenses[]
+  Saving      Saving[]
+  Bill        Bill[]
+  Budget      Budget[]
+  BillSplit   BillSplit[]
+}
+
+model Groups {
+  id         String   @id @default(uuid())
+  group_name String   @unique
+  userId     Int
+  created_by Users    @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  UsersGroups UsersGroups[]
+  Bill        Bill[]
+}
+
+model UsersGroups {
+  id      String @id @default(uuid())
+  userId  Int
+  groupId String
+
+  users     Users    @relation(fields: [userId], references: [id])
+  groups    Groups   @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, groupId])
+}
+
+model Category {
+  id            String     @id @default(uuid())
+  userId        Int
+  users         Users      @relation(fields: [userId], references: [id])
+  category_name String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  Expenses      Expenses[]
+}
+
+model Expenses {
+  id          String   @id @default(uuid())
+  userId      Int
+  users       Users    @relation(fields: [userId], references: [id])
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  amount      Int
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Saving {
+  id          String   @id @default(uuid())
+  userId      Int
+  users       Users    @relation(fields: [userId], references: [id])
+  amount      Int
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// model Bill {
+//   id         String   @id @default(uuid())
+//   userId     String   // Foreign key to Users
+//   users      Users    @relation(fields: [userId], references: [id])
+//   bill_name  String
+//   amount     Int
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+// }
+
+// model BillSplit {
+//   id         String   @id @default(uuid())
+//   split_name String
+//   amount     Int
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+// }
+
+model Bill {
+  id          String   @id @default(uuid())
+  userId      Int
+  users       Users    @relation(fields: [userId], references: [id])
+  groupId     String?
+  groups      Groups?  @relation(fields: [groupId], references: [id])
+  bill_name   String
+  totalAmount Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  billSplits BillSplit[]
+}
+
+model BillSplit {
+  id          String     @id @default(uuid())
+  billId      String
+  bills       Bill       @relation(fields: [billId], references: [id], onDelete: Cascade)
+  userId      Int
+  users       Users      @relation(fields: [userId], references: [id])
+  splitAmount Int
+  status      StatusType
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Budget {
+  id          String     @id @default(uuid())
+  userId      Int
+  users       Users      @relation(fields: [userId], references: [id])
+  amount      Int
+  type        BudgetType
+  description String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
