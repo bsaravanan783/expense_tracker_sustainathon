@@ -5,11 +5,6 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const validator = require("validator");
 const { PrismaClient } = require("@prisma/client");
-const { rootCertificates } = require("tls");
-const { error } = require("console");
-const { configDotenv } = require("dotenv");
-const { connect } = require("http2");
-
 const prisma = new PrismaClient();
 
 // userRouter.post("/createUserGroup", async (req, res) => {
@@ -33,7 +28,7 @@ const prisma = new PrismaClient();
 //   }
 // });
 
-userRouter.post("/signup", async (req, res) => {
+userRouter.post("/createUser", async (req, res) => {
   try {
     const { username, email, password, name } = req.body;
 
@@ -43,9 +38,8 @@ userRouter.post("/signup", async (req, res) => {
     console.log("Request Data:", username, email);
 
     const hashPassword = await bcrypt.hash(password, 10);
-
-    // Create user in the database
-    const user_signup = await prisma.users.create({
+    console.log(hashPassword, "hash");
+    const newUser = await prisma.users.create({
       data: {
         username,
         email,
@@ -53,10 +47,10 @@ userRouter.post("/signup", async (req, res) => {
         name,
       },
     });
-    console.log(user_signup);
+    console.log(newUser);
     res.status(200).json({
       message: "User created successfully",
-      user: user_signup,
+      user: newUser,
     });
   } catch (error) {
     console.error("Error:", error.message);
@@ -64,6 +58,27 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
+userRouter.post("/login", async (req, res) => {
+  const { emailId, password } = req.body;
+  console.log(emailId);
+  const user = await prisma.users.findFirst({
+    where: {
+      email: emailId,
+    },
+  });
+  console.log(user, "ssd");
+  const secret = process.env.JWT_SECRET;
+  if (user) {
+    const userId = user.username;
+    const token = await jwt.sign({ userId: userId }, secret, {
+      expiresIn: "1d",
+    });
+    res.cookie("token", token, { expires: new Date(Date.now() + 7 * 3600000) });
+    res.status(200).json({ message: "User loggeed in Successfully" });
+  }
+});
+
+// for dev
 userRouter.get("/getAllUsers", async (req, res) => {
   try {
     const users = await prisma.users.findMany();
@@ -76,12 +91,12 @@ userRouter.get("/getAllUsers", async (req, res) => {
 
 // userGroup routes
 
-
 userRouter.post("/createGroup", async (req, res) => {
   try {
     console.log("hi");
     const { groupName, members, bills } = req.body;
-    const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
+    // const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
+    const userId = "7eab8135-f33c-4b42-b860-c16e186ecb01";
 
     console.log(bills);
     if (!groupName || !members || members.length === 0) {
@@ -128,7 +143,6 @@ userRouter.post("/createGroup", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 //do not use
 // userRouter.patch("/updateUserGroup/:id", async (req, res) => {
@@ -192,7 +206,7 @@ userRouter.post("/createGroup", async (req, res) => {
 //         ...updateData,
 //       },
 //       include: {
-//       UsersGroups: true, 
+//       UsersGroups: true,
 //     },
 //     });
 //     console.log(userGroup);
@@ -203,11 +217,10 @@ userRouter.post("/createGroup", async (req, res) => {
 //   }
 // });
 
-
 userRouter.patch("/updateUserGroup/:id", async (req, res) => {
   try {
-    const groupId = req.params.id; 
-    const userId = "b686f73b-326e-45c2-94d0-a6afba89df04"; 
+    const groupId = req.params.id;
+    const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
     const { groupName, membersToAdd, bills } = req.body;
 
     let updateData = {};
@@ -274,10 +287,10 @@ userRouter.patch("/updateUserGroup/:id", async (req, res) => {
     const updatedUserGroup = await prisma.groups.findUnique({
       where: { id: groupId },
       include: {
-        UsersGroups: true, 
+        UsersGroups: true,
         Bill: {
           include: {
-            billSplits: true, 
+            billSplits: true,
           },
         },
       },
@@ -285,17 +298,26 @@ userRouter.patch("/updateUserGroup/:id", async (req, res) => {
 
     res.status(200).json({ data: updatedUserGroup });
   } catch (error) {
-    console.error(error); 
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 });
 
-userRouter.get("/getExistingGroups" , async(req,res)=>{
-  const userId = "7eab8135-f33c-4b42-b860-c16e186ecb01";
+userRouter.get("/getExistingGroups", async (req, res) => {
+  try {
+    const userId = "7eab8135-f33c-4b42-b860-c16e186ecb01";
+    const existingGroups = await prisma.usersGroups.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+    console.log(existingGroups);
+    res.status(200).json({
+      data: existingGroups,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-
-
-
-
 
 module.exports = userRouter;

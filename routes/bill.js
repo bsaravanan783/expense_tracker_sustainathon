@@ -14,13 +14,11 @@ billRouter.post("/createBill", async (req, res) => {
       throw new Error("Missing fields in Bill !");
     }
 
-    
-
     const bill = await prisma.bill.create({
       data: {
         userId: userId,
         bill_name: billName,
-        totalAmount : totalAmount,
+        totalAmount: totalAmount,
         billSplits: {
           create: usersList.map((user) => ({
             userId: user.userId,
@@ -28,8 +26,6 @@ billRouter.post("/createBill", async (req, res) => {
             status: "pending",
           })),
         },
-
-
       },
     });
 
@@ -53,6 +49,17 @@ billRouter.delete("/deleteBill", async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+billRouter.get("/getUserInvolvedBills", async (req, res) => {
+  try {
+    const userId = "7eab8135-f33c-4b42-b860-c16e186ecb01";
+    const userInvolvedSpits = await prisma.billSplit.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+  } catch (error) {}
 });
 
 module.exports = billRouter;
