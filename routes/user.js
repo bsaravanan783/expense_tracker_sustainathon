@@ -5,14 +5,12 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const { PrismaClient } = require("@prisma/client");
-<<<<<<< HEAD
-=======
 const { rootCertificates } = require("tls");
 const { error } = require("console");
 const { configDotenv } = require("dotenv");
->>>>>>> 22e37b4 (added crud for userGroups)
 const { connect } = require("http2");
-
+const validator = require('validator');
+  
 const prisma = new PrismaClient();
 
 // userRouter.post("/createUserGroup", async (req, res) => {
@@ -84,9 +82,11 @@ userRouter.post("/createGroup", async (req, res) => {
   try {
     console.log("hi");
     const { groupName, members, bills } = req.body;
+    console.log(req.body);
+    
     const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
 
-    console.log(bills);
+    console.log(bills,groupName);
     if (!groupName || !members || members.length === 0) {
       throw new Error("Group name and members are required!");
     }

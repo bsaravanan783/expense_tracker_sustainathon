@@ -26,7 +26,7 @@ const Expense = () => {
         const response = await fetch('http://localhost:5000/expense/addCategory', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json', 
                 credentials: "include",
             },
             body: JSON.stringify({ username:req.user.username,category: formData.newCategory ,amount:formData.amount,description:formData.description}),
@@ -36,9 +36,9 @@ const Expense = () => {
       setFormData((prev) => ({ ...prev, newCategory: '', category: formData.newCategory }));
     }
   };
- console.log();
+
  
-  
+ 
 
   const handleSubmit = (e) => {
     e.preventDefault();
