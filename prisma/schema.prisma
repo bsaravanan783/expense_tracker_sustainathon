@@ -12,8 +12,19 @@ enum BudgetType {
   LONG_TERM
 }
 
+enum ExpenseType {
+  INCOME
+  EXPENSE
+}
+
+enum StatusType {
+  PAID
+  PENDING
+  REJECTED
+}
+
 model Users {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String
   username  String   @unique
   email     String   @unique
@@ -23,18 +34,18 @@ model Users {
 
   Groups      Groups[]
   UsersGroups UsersGroups[]
-  Category    Category[]
-  Expenses    Expenses[]
-  Saving      Saving[]
-  Bill        Bill[]
-  Budget      Budget[]
-  BillSplit   BillSplit[]
+
+  Expenses Expenses[]
+
+  Bill      Bill[]
+  Budget    Budget[]
+  BillSplit BillSplit[]
 }
 
 model Groups {
-  id         String   @id @default(uuid())
+  id         Int      @id @default(autoincrement())
   group_name String   @unique
-  userId     String
+  userId     Int
   created_by Users    @relation(fields: [userId], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -44,48 +55,29 @@ model Groups {
 }
 
 model UsersGroups {
-  id      String @id @default(uuid())
-  userId  String // Foreign key to Users
-  groupId String // Foreign key to Groups
+  id      Int @id @default(autoincrement())
+  userId  Int
+  groupId Int
 
   users     Users    @relation(fields: [userId], references: [id])
   groups    Groups   @relation(fields: [groupId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, groupId]) // Ensure no duplicate user-group combinations
-}
-
-model Category {
-  id            String     @id @default(uuid())
-  userId        String // Foreign key to Users
-  users         Users      @relation(fields: [userId], references: [id])
-  category_name String
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  Expenses      Expenses[]
+  @@unique([userId, groupId])
 }
 
 model Expenses {
-  id          String   @id @default(uuid())
-  userId      String // Foreign key to Users
-  users       Users    @relation(fields: [userId], references: [id])
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  amount      Int
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+  id     Int   @id @default(autoincrement())
+  userId Int
+  users  Users @relation(fields: [userId], references: [id])
 
-model Saving {
-  id          String   @id @default(uuid())
-  userId      String // Foreign key to Users
-  users       Users    @relation(fields: [userId], references: [id])
+  category    String
   amount      Int
   description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  type        ExpenseType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 // model Bill {
@@ -107,37 +99,37 @@ model Saving {
 // }
 
 model Bill {
-  id          String   @id @default(uuid())
-  userId      String // Foreign key to Users
+  id          Int      @id @default(autoincrement())
+  userId      Int
   users       Users    @relation(fields: [userId], references: [id])
-  groupId     String? // Foreign key to Groups (optional, for group bills)
+  groupId     Int
   groups      Groups?  @relation(fields: [groupId], references: [id])
   bill_name   String
-  totalAmount Int // Total amount for the bill
+  totalAmount Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  billSplits BillSplit[] // Relation to BillSplit
+  billSplits BillSplit[]
 }
 
 model BillSplit {
-  id          String   @id @default(uuid())
-  billId      String // Foreign key to Bill
-  bills       Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
-  userId      String // Foreign key to Users
-  users       Users    @relation(fields: [userId], references: [id])
-  splitAmount Int // Amount assigned to this user
-  status      String // Example: "paid", "pending"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int        @id @default(autoincrement())
+  billId      Int
+  bills       Bill       @relation(fields: [billId], references: [id], onDelete: Cascade)
+  userId      Int
+  users       Users      @relation(fields: [userId], references: [id])
+  splitAmount Int
+  status      StatusType
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Budget {
-  id          String     @id @default(uuid())
-  userId      String // Foreign key to Users
+  id        Int      @id @default(autoincrement())
+  userId      Int
   users       Users      @relation(fields: [userId], references: [id])
   amount      Int
-  type        BudgetType // Enum field for short-term and long-term budget
+  type        BudgetType
   description String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

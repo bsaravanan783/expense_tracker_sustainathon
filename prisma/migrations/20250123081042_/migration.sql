@@ -1,9 +1,12 @@
 -- CreateEnum
 CREATE TYPE "BudgetType" AS ENUM ('SHORT_TERM', 'LONG_TERM');
 
+-- CreateEnum
+CREATE TYPE "StatusType" AS ENUM ('PAID', 'PENDING', 'REJECTED');
+
 -- CreateTable
 CREATE TABLE "Users" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "username" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -18,7 +21,7 @@ CREATE TABLE "Users" (
 CREATE TABLE "Groups" (
     "id" TEXT NOT NULL,
     "group_name" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -28,7 +31,7 @@ CREATE TABLE "Groups" (
 -- CreateTable
 CREATE TABLE "UsersGroups" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
     "groupId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -39,7 +42,7 @@ CREATE TABLE "UsersGroups" (
 -- CreateTable
 CREATE TABLE "Category" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
     "category_name" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -50,7 +53,7 @@ CREATE TABLE "Category" (
 -- CreateTable
 CREATE TABLE "Expenses" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
     "categoryId" TEXT NOT NULL,
     "amount" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
@@ -63,7 +66,7 @@ CREATE TABLE "Expenses" (
 -- CreateTable
 CREATE TABLE "Saving" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
     "amount" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -75,9 +78,10 @@ CREATE TABLE "Saving" (
 -- CreateTable
 CREATE TABLE "Bill" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "groupId" TEXT,
     "bill_name" TEXT NOT NULL,
-    "amount" INTEGER NOT NULL,
+    "totalAmount" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -87,8 +91,10 @@ CREATE TABLE "Bill" (
 -- CreateTable
 CREATE TABLE "BillSplit" (
     "id" TEXT NOT NULL,
-    "split_name" TEXT NOT NULL,
-    "amount" INTEGER NOT NULL,
+    "billId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "splitAmount" INTEGER NOT NULL,
+    "status" "StatusType" NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -98,7 +104,7 @@ CREATE TABLE "BillSplit" (
 -- CreateTable
 CREATE TABLE "Budget" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
     "amount" INTEGER NOT NULL,
     "type" "BudgetType" NOT NULL,
     "description" TEXT NOT NULL,
@@ -143,6 +149,15 @@ ALTER TABLE "Saving" ADD CONSTRAINT "Saving_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "Bill" ADD CONSTRAINT "Bill_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Bill" ADD CONSTRAINT "Bill_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "Groups"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BillSplit" ADD CONSTRAINT "BillSplit_billId_fkey" FOREIGN KEY ("billId") REFERENCES "Bill"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BillSplit" ADD CONSTRAINT "BillSplit_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Budget" ADD CONSTRAINT "Budget_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

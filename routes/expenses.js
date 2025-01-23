@@ -11,7 +11,8 @@ const expenseRouter = express.Router();
 
 
 expenseRouter.post("/create_expense",async (req,res)=>{
-    const{amount,description,category}= req.body
+    const{amount,description}= req.body
+    const category =["Food,Clothing,Transportation,Healthcare,Entertainment,Education,Utilities,Insurance,Personal Care,Other"]
     const userId="6cf9e233-e757-4239-8179-f7a4d6c55b0d"
     console.log(req.body);
     if(!userId || !amount || !description || !category){
@@ -20,6 +21,7 @@ expenseRouter.post("/create_expense",async (req,res)=>{
     try{
       console.log("entered try block");
       console.log(req.body.description,req.body.amount,req.body.category,userId);
+      
       const expense = await prisma.expenses.create({
         data: {
           userId: userId, // Link the expense to the user
@@ -30,6 +32,12 @@ expenseRouter.post("/create_expense",async (req,res)=>{
               category_name: req.body.category, // Create a new category
               
             },
+            users:{
+              connect:{
+                users:userId
+              }
+            }
+              
           },
           users: {
             connect: {
