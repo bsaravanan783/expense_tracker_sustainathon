@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const validator = require("validator");
 const { PrismaClient } = require("@prisma/client");
+const { userAuth } = require("../middlewares/auth");
 const prisma = new PrismaClient();
 
 // userRouter.post("/createUserGroup", async (req, res) => {
@@ -27,6 +28,11 @@ const prisma = new PrismaClient();
 //     res.status(500).json({ error: error.message });
 //   }
 // });
+
+userRouter.get("/protected-route", userAuth, async (req, res) => {
+  console.log(req.user);
+  res.send(req.user);
+});
 
 userRouter.post("/createUser", async (req, res) => {
   try {
@@ -59,26 +65,49 @@ userRouter.post("/createUser", async (req, res) => {
 });
 
 userRouter.post("/login", async (req, res) => {
-  const { emailId, password } = req.body;
-  console.log(emailId);
-  const user = await prisma.users.findFirst({
-    where: {
-      email: emailId,
-    },
-  });
-  console.log(user, "ssd");
-  const secret = process.env.JWT_SECRET;
-  if (user) {
-    const userId = user.username;
-    const token = await jwt.sign({ userId: userId }, secret, {
-      expiresIn: "1d",
+  try {
+    const { emailId, password } = req.body;
+
+    console.log(emailId);
+    const user = await prisma.users.findFirst({
+      where: {
+        email: emailId,
+      },
     });
-    res.cookie("token", token, { expires: new Date(Date.now() + 7 * 3600000) });
-    res.status(200).json({ message: "User loggeed in Successfully" });
+    const hashedPassword = user.password;
+    const isValidUser = await bcrypt.compare(password, hashedPassword);
+    console.log(isValidUser, "valididity");
+    console.log(user, "ssd");
+    const secret = process.env.JWT_SECRET;
+    if (isValidUser) {
+      const userId = user.username;
+      const token = await jwt.sign({ userId: userId }, secret, {
+        expiresIn: "1d",
+      });
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 24 * 3600000),
+      });
+      res.status(200).json({ message: "User loggeed in Successfully" });
+    } else {
+      throw Error("Invalid credentials");
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// for dev
+userRouter.get("/logout", async (req, res) => {
+  try {
+    res.clearCookie("token");
+    res.status(200).json({ message : "Logged out successfully"});
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// for mee
 userRouter.get("/getAllUsers", async (req, res) => {
   try {
     const users = await prisma.users.findMany();
@@ -89,235 +118,7 @@ userRouter.get("/getAllUsers", async (req, res) => {
   }
 });
 
-// userGroup routes
 
-userRouter.post("/createGroup", async (req, res) => {
-  try {
-    console.log("hi");
-    const { groupName, members, bills } = req.body;
-    // const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
-    const userId = "7eab8135-f33c-4b42-b860-c16e186ecb01";
 
-    console.log(bills);
-    if (!groupName || !members || members.length === 0) {
-      throw new Error("Group name and members are required!");
-    }
-
-    const group = await prisma.groups.create({
-      data: {
-        group_name: groupName,
-        userId: userId,
-        UsersGroups: {
-          create: members.map((member) => ({
-            userId: member.userId,
-          })),
-        },
-        Bill: bills
-          ? {
-              create: bills.map((bill) => {
-                const splitAmount = (
-                  bill.totalAmount / bill.users.length
-                ).toFixed(2);
-                return {
-                  userId: userId,
-                  bill_name: bill.billName,
-                  totalAmount: bill.totalAmount,
-                  billSplits: {
-                    create: bill.users.map((user) => ({
-                      userId: user.userId,
-                      splitAmount: parseFloat(splitAmount),
-                      status: "pending",
-                    })),
-                  },
-                };
-              }),
-            }
-          : undefined,
-      },
-    });
-
-    console.log(group);
-    res.status(200).json({ data: group });
-  } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-//do not use
-// userRouter.patch("/updateUserGroup/:id", async (req, res) => {
-//   try {
-//     const groupId = req.params.id;
-//     const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
-//     const { groupName, membersToAdd, bills } = req.body;
-
-//     let updateData = {};
-
-//     if (groupName) {
-//       updateData.group_name = groupName;
-//     }
-//     if (membersToAdd && membersToAdd.length > 0) {
-//       updateData.UsersGroups = {
-//         create: membersToAdd.map((member) => ({
-//           userId: member.userId,
-//         })),
-//       };
-//     }
-
-//     let myGroup = await prisma.groups.findFirst({
-//       where: {
-//         userId: userId,
-//       },
-//       select: {
-//         UsersGroups: {
-//           select: {
-//             userId: true,
-//           },
-//         },
-//       },
-//     });
-//     myGroup = myGroup.UsersGroups;
-//     console.log(myGroup, "sfsff");
-//     if (bills && bills.length > 0) {
-//       updateData.Bill = {
-//         create: bills.map((bill) => {
-//           const splitAmount = (bill.totalAmount / myGroup.length).toFixed(2);
-//           console.log(splitAmount,"dsds");
-//           return {
-//             userId: bill.userId,
-//             bill_name: bill.billName,
-//             totalAmount: bill.totalAmount,
-//             billSplits: {
-//               create: myGroup.map((user) => ({
-//                 userId: user.userId,
-//                 splitAmount: parseFloat(splitAmount),
-//                 status: "pending",
-//               })),
-//             },
-//           };
-//         }),
-//       };
-//     }
-//     const userGroup = await prisma.groups.update({
-//       where: {
-//         id: groupId,
-//       },
-//       data: {
-//         ...updateData,
-//       },
-//       include: {
-//       UsersGroups: true,
-//     },
-//     });
-//     console.log(userGroup);
-//     res.status(200).json({ data: userGroup });
-//     res.send("hi")
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-userRouter.patch("/updateUserGroup/:id", async (req, res) => {
-  try {
-    const groupId = req.params.id;
-    const userId = "b686f73b-326e-45c2-94d0-a6afba89df04";
-    const { groupName, membersToAdd, bills } = req.body;
-
-    let updateData = {};
-
-    if (groupName) {
-      updateData.group_name = groupName;
-    }
-
-    if (membersToAdd && membersToAdd.length > 0) {
-      updateData.UsersGroups = {
-        create: membersToAdd.map((member) => ({
-          userId: member.userId,
-        })),
-      };
-    }
-
-    await prisma.groups.update({
-      where: { id: groupId },
-      data: { ...updateData },
-    });
-
-    const myGroup = await prisma.groups.findUnique({
-      where: { id: groupId },
-      select: {
-        UsersGroups: {
-          select: {
-            userId: true,
-          },
-        },
-      },
-    });
-
-    const groupMembers = myGroup.UsersGroups;
-
-    if (bills && bills.length > 0) {
-      const billData = bills.map((bill) => {
-        const splitAmount = (bill.totalAmount / groupMembers.length).toFixed(2);
-
-        return {
-          userId: bill.userId, // User who addeds  the bill  naan thaan
-          bill_name: bill.billName,
-          totalAmount: bill.totalAmount,
-          billSplits: {
-            create: groupMembers.map((user) => ({
-              userId: user.userId,
-              splitAmount: parseFloat(splitAmount),
-              status: "pending",
-            })),
-          },
-        };
-      });
-
-      // billUpdate to group
-      await prisma.groups.update({
-        where: { id: groupId },
-        data: {
-          Bill: {
-            create: billData,
-          },
-        },
-      });
-    }
-
-    const updatedUserGroup = await prisma.groups.findUnique({
-      where: { id: groupId },
-      include: {
-        UsersGroups: true,
-        Bill: {
-          include: {
-            billSplits: true,
-          },
-        },
-      },
-    });
-
-    res.status(200).json({ data: updatedUserGroup });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-userRouter.get("/getExistingGroups", async (req, res) => {
-  try {
-    const userId = "7eab8135-f33c-4b42-b860-c16e186ecb01";
-    const existingGroups = await prisma.usersGroups.findMany({
-      where: {
-        userId: userId,
-      },
-    });
-    console.log(existingGroups);
-    res.status(200).json({
-      data: existingGroups,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 module.exports = userRouter;
